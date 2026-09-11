@@ -1,0 +1,227 @@
+/* ============================================================
+ * 博客文章点赞组件 — 样式
+ * 版本: v1.0.0
+ *
+ * 设计说明（三项判断）：
+ *
+ * 1) 布局策略
+ *    内联流式。组件是文章正文里的一个行内元素，与段落基线对齐，
+ *    不占用整行、不用卡片包裹、不用药丸造型。宽度由内容自然撑开。
+ *
+ * 2) 配色逻辑
+ *    不写死任何背景色与文字色，全部继承博客本身（color: inherit
+ *    / currentColor）。因此博客切深浅色，组件自动跟随，不需要额外适配。
+ *    整个组件只有一处强调色——"已赞"状态的珊瑚橙 #F77234。
+ *    其余层级（边框、加载态）靠 currentColor 的透明度混合实现。
+ *
+ * 3) 动效意图
+ *    只在点赞成功那一刻给一次 240ms 轻微缩放，用来确认"动作生效了"。
+ *    不用弹性缓动、不用 hover 位移、不做循环动画。
+ *    并在 prefers-reduced-motion 下全部关闭。
+ *
+ * 可覆盖的 CSS 变量（在博客样式里写 .like-widget { --xxx: ... } 即可）：
+ *    --like-accent      强调色（已赞态）
+ *    --like-font-size   组件字号
+ *    --like-radius      按钮圆角
+ * ============================================================ */
+
+.like-widget {
+  --like-accent: #F77234;
+  --like-font-size: 0.9375rem;
+  --like-radius: 6px;
+
+  /* 关键：不接管背景与文字色，全部继承博客 */
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5em;
+  margin: 1.5em 0 1em;
+  font-size: var(--like-font-size);
+  line-height: 1.4;
+  text-align: left;
+}
+
+/* ------------------------------------------------------------
+ * 按钮
+ * ------------------------------------------------------------ */
+
+.like-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  min-height: 2.1em;
+  padding: 0.35em 0.85em;
+
+  /* 旧浏览器兜底：不支持 color-mix 时用这行 */
+  border: 1px solid rgba(136, 136, 136, 0.35);
+  /* 支持 color-mix 则用当前文字色的 25% 透明度，自动跟随深浅主题 */
+  border-color: color-mix(in srgb, currentColor 25%, transparent);
+
+  border-radius: var(--like-radius);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 1em;
+  line-height: 1;
+  cursor: pointer;
+
+  -webkit-appearance: none;
+  appearance: none;
+  -webkit-tap-highlight-color: transparent;
+
+  transition: border-color 140ms ease, color 140ms ease;
+}
+
+.like-button:hover {
+  border-color: color-mix(in srgb, currentColor 45%, transparent);
+}
+
+.like-button:focus-visible {
+  outline: 2px solid var(--like-accent);
+  outline-offset: 2px;
+}
+
+/* 图标：默认描边风格，跟随文字色 */
+.like-icon {
+  display: block;
+  width: 1.05em;
+  height: 1.05em;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  transition: fill 140ms ease, stroke 140ms ease;
+}
+
+/* 计数：等宽数字，避免从 9 变 10 时按钮宽度跳动 */
+.like-count {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+  min-width: 1ch;
+}
+
+.like-label {
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------
+ * 已赞状态
+ * ------------------------------------------------------------ */
+
+/* 用 aria-pressed 而不是类名做状态钩子：
+   无障碍属性和视觉状态永远同步，不会出现"看着是已赞、读屏说是未赞" */
+.like-button[aria-pressed="true"] {
+  color: var(--like-accent);
+  border-color: color-mix(in srgb, var(--like-accent) 42%, transparent);
+}
+
+/* 已赞时图标从描边变实心 */
+.like-button[aria-pressed="true"] .like-icon {
+  fill: currentColor;
+  stroke: currentColor;
+}
+
+/* 已赞的按钮仍然是可点的 —— 再点一次是取消点赞，所以光标保持 pointer。
+   只有在请求进行中（data-pending）才临时禁用。 */
+.like-button[aria-pressed="true"]:disabled {
+  opacity: 1;
+}
+
+/* 请求进行中（尚未确定结果）：降一点饱和度，禁止再点 */
+.like-button[data-pending="true"]:disabled {
+  opacity: 0.62;
+  cursor: progress;
+}
+
+/* ------------------------------------------------------------
+ * 状态：加载中 / 失败
+ * ------------------------------------------------------------ */
+
+.like-widget[data-state="loading"] .like-count {
+  opacity: 0.4;
+}
+
+.like-widget[data-state="error"] .like-button {
+  border-color: color-mix(in srgb, currentColor 18%, transparent);
+}
+
+/* 内联提示文字：点失败、已赞过等等。默认不占位，出现时不推动布局。 */
+.like-msg {
+  font-size: 0.8125em;
+  opacity: 0.72;
+}
+
+.like-msg:empty {
+  display: none;
+}
+
+/* 配置告警（data-article-id 还是示例值）。
+   这类错误不会让页面报错，只会让多篇文章悄悄共用一个点赞数，
+   所以提示要显眼一点，用强调色而不是灰字。 */
+.like-widget[data-state="warn"] .like-msg {
+  color: var(--like-accent);
+  opacity: 1;
+}
+
+.like-widget[data-state="warn"] .like-button {
+  border-color: color-mix(in srgb, var(--like-accent) 55%, transparent);
+}
+
+/* ------------------------------------------------------------
+ * 点赞成功的确认动效
+ * ------------------------------------------------------------ */
+
+.like-button.is-just-liked {
+  animation: like-pop 240ms ease-out;
+}
+
+@keyframes like-pop {
+  0%   { transform: scale(1); }
+  38%  { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+/* ------------------------------------------------------------
+ * 移动端：加大点击热区，其余不变
+ * ------------------------------------------------------------ */
+
+@media (max-width: 480px) {
+  .like-button {
+    min-height: 2.6em;
+    padding: 0.45em 1em;
+  }
+}
+
+/* ------------------------------------------------------------
+ * 深色主题适配
+ * 底色和文字色都继承博客，本不需要适配；这里只把强调色提亮一档，
+ * 保证珊瑚橙在深底上仍然有足够对比度。
+ * 同时兼容两种切换方式：系统偏好、以及博客自己的 [data-theme] 属性。
+ * ------------------------------------------------------------ */
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .like-widget {
+    --like-accent: #FF8A50;
+  }
+}
+
+[data-theme="dark"] .like-widget,
+.dark .like-widget,
+html[data-color-scheme="dark"] .like-widget {
+  --like-accent: #FF8A50;
+}
+
+/* ------------------------------------------------------------
+ * 尊重"减少动态效果"系统设置
+ * ------------------------------------------------------------ */
+
+@media (prefers-reduced-motion: reduce) {
+  .like-button {
+    transition: none;
+  }
+  .like-button.is-just-liked {
+    animation: none;
+  }
+}

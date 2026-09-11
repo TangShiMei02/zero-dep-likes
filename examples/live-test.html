@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-page-node-id="ByjToLRyEzz7svNa3HBlFE">
+<head data-page-node-id="jWUdFTigxtAGIsNckwDEHz">
+<meta charset="utf-8" data-page-node-id="BTDfT1Bv3XW3m3Ut8s1ARS">
+<meta name="viewport" content="width=device-width, initial-scale=1" data-page-node-id="zbj0mHxSAq0AuKBrHVNpFK">
+<title>点赞系统 · 真实接口试用</title>
+
+<!--
+  ============================================================
+  真实接口试用页
+
+  和 demo.html 的区别：
+    demo.html  用内置假后端，不需要服务器，看长相和交互用的
+    本页       接你自己的真实 API 和数据库，验的是"真的能存进去"
+
+  上传到 /zero-dep-likes/examples/ 下，然后打开：
+    https://你的域名/zero-dep-likes/examples/live-test.html
+
+  这一页故意不写 data-article-id —— 用的是「按链接自动派生」，
+  点几次赞、刷新页面，数字会留下来，说明数据真的进了数据库。
+  ============================================================
+-->
+
+<link rel="icon" type="image/svg+xml" href="../assets/likes/icon.svg" data-page-node-id="BHVgFv0khPerFJVKlrYzus">
+<link rel="icon" type="image/png" sizes="32x32" href="../assets/likes/icon-32.png" data-page-node-id="w4ZYmgHYvZJHYskB3UJMg8">
+<link rel="apple-touch-icon" href="../assets/likes/icon-180.png" data-page-node-id="9qoPSrMQ4m9maLbjodxojZ">
+<link rel="stylesheet" href="../assets/likes/likes.css" data-page-node-id="sBeJkP3hyAsbdwJGY89JDB">
+
+<style>
+  :root {
+    --bg: #f6f6f7; --surface: #fff; --text: #23262b; --dim: #6a7078;
+    --line: #e3e4e7; --accent: #F77234;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 2.5rem 1.25rem 4rem; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+                 "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    font-size: 15px; line-height: 1.75;
+  }
+  .wrap { max-width: 44rem; margin: 0 auto; }
+  h1 { font-size: 1.25rem; margin: 0 0 .3rem; }
+  h2 { font-size: .95rem; margin: 0 0 .7rem; }
+  .sub { color: var(--dim); font-size: .85rem; margin: 0 0 1.25rem; }
+  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 8px;
+           padding: 1.2rem 1.35rem; margin-bottom: 1rem; }
+  article { background: var(--surface); border: 1px solid var(--line); border-radius: 8px;
+            padding: 1.75rem 1.75rem 1.25rem; margin-bottom: 1rem; }
+  article h2 { font-size: 1.15rem; margin: 0 0 .3rem; }
+  .meta { font-size: .8rem; color: var(--dim); margin-bottom: 1rem; }
+  .kv { font-size: .86rem; }
+  .kv div { display: flex; gap: .6rem; padding: .2rem 0; }
+  .kv b { flex: 0 0 7.5rem; font-weight: 600; color: var(--dim); }
+  .kv span { word-break: break-all; }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+          font-size: .8rem; }
+  code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .86em;
+         padding: .1em .35em; border-radius: 4px; background: #f0f0f1; }
+  ol { margin: .4rem 0 0; padding-left: 1.2rem; font-size: .88rem; }
+  li { margin-bottom: .4rem; }
+  .hint { font-size: .84rem; color: var(--dim); margin: .7rem 0 0; }
+</style>
+</head>
+<body data-page-node-id="5BkBJE3geDWDhlpRVgae2J">
+<div class="wrap" data-page-node-id="AQUfTJuZlBXqJMl0CDGBxr">
+
+  <h1 data-page-node-id="ldOMkpC5LEmNvNbtN5xh3K">点赞系统 · 真实接口试用</h1>
+  <p class="sub" data-page-node-id="2UJ6EBb4rP6Z17pqDc4Jkl">这一页接的是你自己的 API 和数据库。点几次赞，刷新页面，数字会留下来。</p>
+
+  <div class="panel" data-page-node-id="VS5diWFZ7rNTgnw74s36uU">
+    <h2 data-page-node-id="oG3AOBr6Vtg0bA0mUBSSSe">当前情况</h2>
+    <div class="kv" data-page-node-id="F8STugLyEuNXym3PSb08rA">
+      <div data-page-node-id="HzRgRvxdFdApPpzeyTlk5J"><b data-page-node-id="kUzJBAWPW4uZaV2fFujCe3">本页地址</b><span class="mono" id="here" data-page-node-id="24OZh5ZG91GS32pGtu868Q">—</span></div>
+      <div data-page-node-id="7L9GpudjaLOMzoR6hhfiku"><b data-page-node-id="MNH7RFULH7ulP9DYSsYLQh">API 地址</b><span class="mono" data-page-node-id="AEN8iv0J43B0obhe4hVLjF">../api/likes.php</span></div>
+      <div data-page-node-id="er72du0uQrG9ceZ5WP9JK0"><b data-page-node-id="xF9YR5sRdzOuSZzl8XdTz7">这篇文章的 ID</b><span class="mono" id="derived" data-page-node-id="Zm5Lk9UvaETwCkIWfkEaVB">检测中…</span></div>
+    </div>
+    <p class="hint" data-page-node-id="DJckC50VZshXFSIX7AnYPf">
+      这一页<b data-page-node-id="QCbEFrwkhds6zmxMUAHkLv">故意没有写 <code data-page-node-id="yMJBo5pRhuqCGoFQ66geyL">data-article-id</code></b>，用的是「按当前链接自动派生」。
+      上面那个 ID 就是它自己算出来的 —— 换一个网址打开，ID 就会跟着变。
+    </p>
+  </div>
+
+  <article data-page-node-id="2mtWmCFYeA19JuWK0EvIQi">
+    <h2 data-page-node-id="KI2T91CPBA1y5324oFSBYt">一篇示例文章</h2>
+    <p class="meta" data-page-node-id="EoaNVSgiA1zuFfEm58p7C8">2026-09-11 · 试试点下面的按钮</p>
+    <p data-page-node-id="Kv12vNyVwpdOHARTffiWa1">下面这个就是真实的点赞组件。它在跟你的服务器通信，数据存在你的 MySQL 里。</p>
+
+    <!-- 注意：这里没有 data-article-id，ID 由组件自己从链接派生 -->
+    <div class="like-widget" data-page-node-id="aUPLoQD0dNouBSfdvRx8uq"></div>
+  </article>
+
+  <div class="panel" data-page-node-id="2iJJWZTQS4CtmEBcqhJ1yI">
+    <h2 data-page-node-id="nr6iSboj0agRvmzB6lhagU">试完怎么确认真的存进去了</h2>
+    <ol data-page-node-id="6qgfdaRT6Dw47wBRnokUDF">
+      <li data-page-node-id="8ch9omEA8VacxhhyUNBraW">点一下赞，数字加 1</li>
+      <li data-page-node-id="hp5D71omv4ggQXrXG0Zo2r"><b data-page-node-id="FG6TTk3cbzEV6kXFZwbv88">刷新页面</b> —— 数字还在，按钮显示「已赞」</li>
+      <li data-page-node-id="E68Co3mkM7ju3su2brrU8t">换个浏览器或清一下 <code data-page-node-id="3ScVzHZEsRPpDnu7ZHsWDe">localStorage</code> 再来点 —— 数字继续加
+          （说明换了个访客，独立计数）</li>
+      <li data-page-node-id="bvwlrtEy39wzg2xSYshaW4">想去数据库里看，在 phpMyAdmin 执行：
+          <div class="mono" style="background:#f0f0f1;padding:.5rem .7rem;border-radius:6px;margin-top:.45rem" data-page-node-id="JF6kEIs2VQInLlsYntl8Fh">
+            SELECT * FROM article_likes ORDER BY updated_at DESC LIMIT 10;
+          </div>
+      </li>
+    </ol>
+  </div>
+
+  <div class="panel" data-page-node-id="WSacEToa5QPZjvlfogLp40">
+    <h2 data-page-node-id="1CDsspGrwqTxVgcudrEuNo">搬到你的博客上，就三步</h2>
+    <ol data-page-node-id="lhEPBwyeQaRujQL8a6LQJx">
+      <li data-page-node-id="xJLQolOH4Qd7w0nFXiIXnf">
+        在文章模板的正文末尾（评论框之前）加一行：
+        <div class="mono" style="background:#f0f0f1;padding:.5rem .7rem;border-radius:6px;margin-top:.45rem" data-page-node-id="ruNv2dZ9VGSgwnRsuMh6g0">
+          &lt;div class="like-widget"&gt;&lt;/div&gt;
+        </div>
+      </li>
+      <li data-page-node-id="5lttX3waXKeA3EVCluLOIW">
+        在模板的 <code data-page-node-id="cX11EDvivvS9ZhbLoYIAB9">&lt;head&gt;</code> 里加样式表，<b data-page-node-id="QCmq4AGybH9N8PL9XGO2Es">全站只加一次</b>：
+        <div class="mono" style="background:#f0f0f1;padding:.5rem .7rem;border-radius:6px;margin-top:.45rem" data-page-node-id="zKFE4XdXhCLBJfCszDcOWl">
+          &lt;link rel="stylesheet" href="/zero-dep-likes/assets/likes/likes.css"&gt;
+        </div>
+      </li>
+      <li data-page-node-id="Qb3Ogz1Ozv6YtOdmom0tyc">
+        在 <code data-page-node-id="ty1BElz7H7fEUN5RQoWlkw">&lt;/body&gt;</code> 之前加脚本，同样<b data-page-node-id="b3gINwOnWYCNd9iYMZ7Aij">全站只加一次</b>：
+        <div class="mono" style="background:#f0f0f1;padding:.5rem .7rem;border-radius:6px;margin-top:.45rem" data-page-node-id="CryipwFY8yKuVHFQZE9riS">
+          &lt;script src="/zero-dep-likes/assets/likes/likes.js"<br data-page-node-id="Kg8RMeGZBwswAfeLbVnggO">
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;data-api="/zero-dep-likes/api/likes.php"&gt;&lt;/script&gt;
+        </div>
+      </li>
+    </ol>
+    <p class="hint" data-page-node-id="BuzV7oiBXHRzSTpk0L45D5">
+      路径里的 <code data-page-node-id="71AcWXjxOhhsjMBzjHF4Gw">/zero-dep-likes/</code> 要按你的实际部署改。如果以后把 <code data-page-node-id="cdYRvLDR4PaVgef8AJjGbE">api/</code> 和
+      <code data-page-node-id="JSLFsmvaSeZKZaUESmnLtH">assets/</code> 挪到网站根目录，这两处路径里的 <code data-page-node-id="q0D3UH5HS1tIupTOIKuKU8">/zero-dep-likes</code> 就可以去掉了。
+    </p>
+    <p class="hint" data-page-node-id="1wACFrttsyjanaeWCDmL4k">
+      <b data-page-node-id="xBwsL76eCcylVwob62DCiY">列表页注意</b>：那种一页显示多篇文章摘要的页面，不能用自动派生
+      —— 它们同处一个 URL，会算出同一个 ID 而共用一个计数。
+      列表页必须给每个组件写各自的 <code data-page-node-id="ZfvxKBCHwBVe0zMNTU6YUs">data-article-id</code>。
+      真写漏了，组件会在页面上直接告警，不会悄悄错下去。
+    </p>
+  </div>
+
+</div>
+
+<!-- 真实组件。data-api 指向真实接口，不走假后端。
+     ?v= 这个查询串是缓存破除用的：改了脚本就把它一起改掉，
+     否则浏览器（或主机/CDN 的静态缓存）可能继续用旧文件。 -->
+<script src="../assets/likes/likes.js?v=1.8.0" data-api="../api/likes.php"></script>
+
+<script>
+(function () {
+  'use strict';
+
+  document.getElementById('here').textContent = window.location.pathname;
+
+  // likes.js 会把派生出来的 ID 写回 data-article-id 属性，这里读出来展示
+  window.setTimeout(function () {
+    var node = document.querySelector('.like-widget');
+    var el = document.getElementById('derived');
+    if (!node) { return; }
+
+    var id = node.getAttribute('data-article-id');
+    var source = node.getAttribute('data-article-id-source');
+
+    if (!id) {
+      el.textContent = '（没拿到 —— 看控制台有没有报错）';
+      return;
+    }
+    el.textContent = id + (source === 'auto' ? '（按链接自动派生）' : '（模板里指定）');
+  }, 300);
+})();
+</script>
+
+</body>
+</html>

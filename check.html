@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>点赞系统 · 部署自检</title>
+<link rel="icon" type="image/svg+xml" href="assets/likes/icon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/likes/icon-32.png">
+<link rel="apple-touch-icon" href="assets/likes/icon-180.png">
+
+<!--
+  ============================================================
+  部署自检页
+  ============================================================
+
+  用法：
+    1. 把这个文件上传到网站根目录，和 api/ 目录同级
+       （也就是能通过 https://你的域名/check.html 打开）
+    2. 浏览器打开它，点「开始检测」
+    3. 看结果，全绿就说明后端部署成功
+    4. 检测完请把本文件从服务器删掉（或改名）
+
+  为什么必须放在服务器上、不能本地打开？
+    因为接口做了 CORS 白名单，只允许你自己的域名调用。
+    页面放在同域名下就是同源请求，不受白名单限制。
+    本地双击打开的话，来源是 null，会被接口拒绝。
+
+  注意：检测会往数据库里写几条测试数据，文章 ID 以 check- 开头。
+  检测完按页面底部的 SQL 清掉即可。
+  ============================================================
+-->
+
+<style>
+  :root {
+    --bg: #f6f6f7;
+    --surface: #ffffff;
+    --text: #23262b;
+    --text-dim: #6a7078;
+    --line: #e3e4e7;
+    --ok: #1a7f4b;
+    --ok-bg: #eaf6ef;
+    --bad: #c0392b;
+    --bad-bg: #fdeeec;
+    --warn: #8a6100;
+    --accent: #F77234;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    padding: 2.5rem 1.25rem 4rem;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+                 "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    font-size: 15px;
+    line-height: 1.7;
+  }
+
+  .wrap { max-width: 54rem; margin: 0 auto; }
+
+  h1 { font-size: 1.3rem; margin: 0 0 0.3rem; }
+  .sub { color: var(--text-dim); font-size: 0.85rem; margin: 0 0 1.5rem; }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+
+  label { display: block; font-size: 0.85rem; color: var(--text-dim); margin-bottom: 0.35rem; }
+
+  .row { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+
+  input[type="text"] {
+    flex: 1 1 20rem;
+    min-width: 0;
+    padding: 0.5rem 0.7rem;
+    font: inherit;
+    font-size: 0.9rem;
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+  }
+
+  input[type="text"]:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  button {
+    padding: 0.5rem 1.1rem;
+    font: inherit;
+    font-size: 0.9rem;
+    color: #fff;
+    background: var(--accent);
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    cursor: pointer;
+  }
+
+  button.secondary {
+    color: var(--text);
+    background: transparent;
+    border-color: var(--line);
+  }
+
+  button:disabled { opacity: 0.5; cursor: progress; }
+
+  .summary {
+    font-size: 0.95rem;
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    border: 1px solid var(--line);
+  }
+
+  .summary.all-ok { background: var(--ok-bg); border-color: #b7e0c8; color: var(--ok); }
+  .summary.has-bad { background: var(--bad-bg); border-color: #f2c3bd; color: var(--bad); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+
+  th {
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    padding: 0.5rem 0.6rem;
+    border-bottom: 1px solid var(--line);
+    white-space: nowrap;
+  }
+
+  td { padding: 0.6rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+
+  tr:last-child td { border-bottom: none; }
+
+  .badge {
+    display: inline-block;
+    min-width: 3.2rem;
+    text-align: center;
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.78rem;
+    white-space: nowrap;
+  }
+
+  .badge.ok  { background: var(--ok-bg);  color: var(--ok); }
+  .badge.bad { background: var(--bad-bg); color: var(--bad); }
+  .badge.skip { background: #f0f0f1; color: var(--text-dim); }
+
+  .mono {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.8rem;
+    word-break: break-all;
+  }
+
+  .detail { color: var(--text-dim); font-size: 0.8rem; margin-top: 0.25rem; }
+
+  .hint {
+    background: #fffaf6;
+    border: 1px solid #f5d9c6;
+    border-radius: 6px;
+    padding: 0.75rem 1rem;
+    font-size: 0.85rem;
+    margin-top: 1rem;
+  }
+
+  .hint strong { color: var(--accent); }
+
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.85em;
+    padding: 0.1em 0.35em;
+    border-radius: 4px;
+    background: #f0f0f1;
+  }
+
+  .manual { font-size: 0.875rem; }
+  .manual li { margin-bottom: 0.4rem; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <h1>点赞系统 · 部署自检</h1>
+  <p class="sub">逐条验证后端是否真的可用。检测会写入少量测试数据，文章 ID 以 <code>check-</code> 开头。</p>
+
+  <div class="panel">
+    <label for="api">API 地址</label>
+    <div class="row">
+      <input type="text" id="api" value="">
+      <button type="button" id="run">开始检测</button>
+      <button type="button" id="copy" class="secondary" disabled>复制结果</button>
+    </div>
+    <p id="api-hint" style="font-size:.8rem;color:var(--dim);margin:.6rem 0 0;line-height:1.6"></p>
+  </div>
+
+  <div id="summary"></div>
+
+  <div class="panel" id="results-panel" style="display:none">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:11rem">检测项</th>
+          <th style="width:4.5rem">结论</th>
+          <th>实际情况</th>
+        </tr>
+      </thead>
+      <tbody id="results"></tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <strong style="font-size:0.9rem">自检页测不到的三件事</strong>
+    <ul class="manual" style="margin:0.6rem 0 0; padding-left:1.2rem">
+      <li><b>并发不丢数据</b> —— 本页是串行请求。并发要用命令行跑，见 <code>tests/api-test.md</code> 用例 9。</li>
+      <li><b>CORS 跨域</b> —— 本页与接口同源，浏览器不会发 <code>Origin</code> 头，测不了。
+          想确认的话在电脑上用命令行跑（把域名换成你的）：
+          <div class="mono" style="margin:0.35rem 0 0.2rem">
+            curl -s -i -H "Origin: https://evil.example.com" "https://你的域名/api/likes.php?article_id=test-001" | grep -i access-control
+          </div>
+          <span style="color:var(--text-dim)">没有任何输出 = 白名单生效（正确）；
+          输出里有 <code>Access-Control-Allow-Origin: *</code> 反而是错的。</span>
+      </li>
+      <li><b>前端组件行为</b> —— 把点赞 HTML 插进博客模板后，实际点一下、刷新、看控制台有没有红色报错。
+          本页只验后端，不验你博客页面里的组件。</li>
+    </ul>
+  </div>
+
+  <div class="hint">
+    <p style="margin:0 0 0.5rem"><strong>检测完记得把 check.html 从服务器删掉。</strong>
+    它会把接口信息暴露给任何访问者，虽然只能读点赞数、写测试数据，但没有留在服务器上的必要。</p>
+    <p style="margin:0">清理测试数据（在 phpMyAdmin 里执行）：</p>
+    <p class="mono" style="margin:0.35rem 0 0">DELETE FROM like_records&nbsp; WHERE article_id LIKE 'check-%';<br>
+    DELETE FROM article_likes WHERE article_id LIKE 'check-%';</p>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var apiInput = document.getElementById('api');
+  var apiHint = document.getElementById('api-hint');
+  var runBtn = document.getElementById('run');
+  var copyBtn = document.getElementById('copy');
+  var summaryEl = document.getElementById('summary');
+  var panelEl = document.getElementById('results-panel');
+  var tbodyEl = document.getElementById('results');
+
+  var report = [];
+
+  /* ---------- 基础请求 ---------- */
+
+  function apiCall(url, options) {
+    return fetch(url, options).then(function (res) {
+      return res.text().then(function (text) {
+        var json = null;
+        try { json = JSON.parse(text); } catch (e) { /* 不是 JSON */ }
+        return {
+          status: res.status,
+          contentType: res.headers.get('content-type') || '',
+          cacheControl: res.headers.get('cache-control') || '',
+          acao: res.headers.get('access-control-allow-origin') || '',
+          json: json,
+          text: text
+        };
+      });
+    });
+  }
+
+  /**
+   * 猜出 API 地址。
+   *
+   * check.html 是放在 api/ 的上一级的，所以「本页所在目录 + /api/likes.php」
+   * 就是正确地址。
+   *
+   * 这里以前写死成 '/api/likes.php'，结果部署在子目录时（例如 /zero-dep-likes/）
+   * 所有请求都打到了错误路径上，全部 404 —— 这个坑真踩过，所以改成自动推断。
+   */
+  function guessApiUrl() {
+    var path = window.location.pathname || '/';
+    path = path.replace(/\/[^\/]*$/, '');   // 去掉文件名，留下目录
+    path = path.replace(/\/+$/, '');        // 去掉末尾斜杠
+    return path + '/api/likes.php';
+  }
+
+  function base() {
+    return apiInput.value.trim() || guessApiUrl();
+  }
+
+  function get(qs) {
+    return apiCall(base() + qs, { method: 'GET', cache: 'no-store' });
+  }
+
+  function post(payload) {
+    return apiCall(base(), {
+      method: 'POST',
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+  }
+
+  /* ---------- 结果记录 ---------- */
+
+  /**
+   * 记一条结果。
+   * @param {string}          name
+   * @param {boolean|string}  status  true=通过，false=不通过，'skip'=无法自动检测
+   */
+  function record(name, status, actual, detail) {
+    report.push({ name: name, status: status, actual: actual, detail: detail || '' });
+    render();
+  }
+
+  function shortJson(res) {
+    if (!res) { return '(无响应)'; }
+    if (res.json) { return JSON.stringify(res.json); }
+    var t = (res.text || '').slice(0, 120);
+    return 'HTTP ' + res.status + ' · ' + (t || '(空)');
+  }
+
+  function render() {
+    tbodyEl.innerHTML = '';
+
+    report.forEach(function (r) {
+      var isSkip = r.status === 'skip';
+
+      var tr = document.createElement('tr');
+
+      var tdName = document.createElement('td');
+      tdName.textContent = r.name;
+
+      var tdOk = document.createElement('td');
+      var badge = document.createElement('span');
+      badge.className = 'badge ' + (isSkip ? 'skip' : (r.status ? 'ok' : 'bad'));
+      badge.textContent = isSkip ? '跳过' : (r.status ? '通过' : '不通过');
+      tdOk.appendChild(badge);
+
+      var tdActual = document.createElement('td');
+      var mono = document.createElement('div');
+      mono.className = 'mono';
+      mono.textContent = r.actual;
+      tdActual.appendChild(mono);
+      if (r.detail) {
+        var d = document.createElement('div');
+        d.className = 'detail';
+        d.textContent = r.detail;
+        tdActual.appendChild(d);
+      }
+
+      tr.appendChild(tdName);
+      tr.appendChild(tdOk);
+      tr.appendChild(tdActual);
+      tbodyEl.appendChild(tr);
+    });
+
+    panelEl.style.display = report.length ? 'block' : 'none';
+
+    var failed = report.filter(function (r) { return r.status === false; }).length;
+    var skipped = report.filter(function (r) { return r.status === 'skip'; }).length;
+    var passed = report.length - failed - skipped;
+
+    if (!report.length) {
+      summaryEl.innerHTML = '';
+      return;
+    }
+
+    summaryEl.innerHTML = '';
+    var box = document.createElement('div');
+    box.className = 'summary ' + (failed === 0 ? 'all-ok' : 'has-bad');
+
+    // 全都是 404 —— 这不是接口的问题，是地址填错了。
+    // 单独提示，否则用户会跑去查数据库，方向全错。
+    var notFound = report.filter(function (r) {
+      return r.status === false && r.actual.indexOf('HTTP 404') !== -1;
+    }).length;
+
+    if (failed > 0 && notFound === failed) {
+      box.textContent = '全部 ' + failed + ' 项都是 HTTP 404 —— 这个地址下根本没有文件：'
+        + base() + '。这跟数据库、配置都无关，纯粹是地址不对。'
+        + '对照输入框下面提示的建议地址改一下，再点一次「开始检测」。';
+    } else if (failed === 0) {
+      box.textContent = '自动检测全部通过：' + passed + ' / ' + report.length + ' 项。'
+        + (skipped ? '另有 ' + skipped + ' 项需要手动确认（见下表）。' : '');
+    } else {
+      box.textContent = '有 ' + failed + ' 项不通过（通过 ' + passed + ' / ' + report.length
+        + '），请看下面表格的「实际情况」。';
+    }
+
+    summaryEl.appendChild(box);
+
+    copyBtn.disabled = false;
+  }
+
+  /* ---------- 检测流程 ---------- */
+
+  function run() {
+    report = [];
+    render();
+    runBtn.disabled = true;
+    copyBtn.disabled = true;
+    apiInput.disabled = true;
+
+    // 每次检测用一组全新的 ID，避免上一次的数据干扰这次判断
+    var stamp = Date.now().toString(36);
+    var art1 = 'check-' + stamp + '-a';
+    var art2 = 'check-' + stamp + '-b';
+    var art3 = 'check-' + stamp + '-c';     // 故意不创建，用来测"无记录返回 0"
+    var art4 = 'check-' + stamp + '-d';     // 专供取消点赞那几项用
+    var visitorA = 'check-visitor-' + stamp + '-aaaaaaaa';
+    var visitorB = 'check-visitor-' + stamp + '-bbbbbbbb';
+    var visitorC = 'check-visitor-' + stamp + '-cccccccc';   // 从没点过赞的访客
+
+    var unknownArticle = 'check-' + stamp + '-unknown';
+
+    return Promise.resolve()
+
+      /* 1. 接口可达 —— 无参数应当返回 400 */
+      .then(function () {
+        return get('');
+      })
+      .then(function (res) {
+        var ok = !!res.json && res.json.code === 400;
+        record('① 接口可达性', ok, shortJson(res),
+          ok ? '缺少参数时正确返回 400，说明 PHP 与路由都正常'
+             : '期望 code:400。若返回 404 是文件位置不对；若返回 500 看下面是否有其它失败项');
+      })
+
+      /* 2. 该文件应被 403 拦住 —— 说明配置文件的访问守卫生效 */
+      .then(function () {
+        return apiCall(base().replace(/[^/]*$/, 'config.php'), { method: 'GET', cache: 'no-store' });
+      })
+      .then(function (res) {
+        var ok = res.status === 403;
+        record('② 配置访问守卫', ok, 'HTTP ' + res.status,
+          ok ? '直接访问 config.php 返回 403，没有泄露配置'
+             : '期望 403。返回 200 说明服务器把 .php 当静态文件返回了，很危险，请检查主机配置');
+      })
+
+      /* 3. 数据库连通 + 建表是否成功 —— 这是最关键的一条 */
+      .then(function () {
+        return get('?article_id=' + encodeURIComponent(unknownArticle));
+      })
+      .then(function (res) {
+        var ok = !!res.json && res.json.code === 0
+                 && res.json.data && res.json.data.like_count === 0;
+        record('③ 数据库连通与建表', ok, shortJson(res),
+          ok ? '能查到 0 条记录并正常返回，说明连接、建表、权限全部就绪'
+             : '期望 code:0 且 like_count:0。返回 500 一般是 config.php 的数据库四项填错，或 schema.sql 没导入');
+      })
+
+      /* 4. 非法 article_id 应当被拒 */
+      .then(function () {
+        return get('?article_id=' + encodeURIComponent('bad id with spaces'));
+      })
+      .then(function (res) {
+        var ok = !!res.json && res.json.code === 400;
+        record('④ 非法参数拦截', ok, shortJson(res),
+          ok ? '含空格的 ID 被正确拒绝' : '期望 code:400，说明参数校验没生效');
+      })
+
+      /* 5. 首次点赞 */
+      .then(function () {
+        return post({ article_id: art1, visitor_id: visitorA });
+      })
+      .then(function (res) {
+        var ok = !!res.json && res.json.code === 0
+                 && res.json.data && res.json.data.like_count === 1
+                 && res.json.data.liked === true;
+        record('⑤ 首次点赞', ok, shortJson(res),
+          ok ? '写入成功，计数从 0 变成 1' : '期望 code:0 且 like_count:1。写入失败通常是数据库用户缺少 INSERT / UPDATE 权限');
+      })
+
+      /* 6. 重新读取 —— 验证真的落库了，不是只在内存里 */
+      .then(function () {
+        return get('?article_id=' + encodeURIComponent(art1) + '&visitor_id=' + encodeURIComponent(visitorA));
+      })
+      .then(function (res) {
+        var ok = !!res.json && res.json.code === 0
+                 && res.json.data.like_count === 1
+                 && res.json.data.liked === true;
+        record('⑥ 数据持久化', ok, shortJson(res),
+          ok ? '重新查询仍是 1 且标记为已赞，数据确实写进了数据库'
+             : '期望 like_count:1 且 liked:true。若 liked 是 false，多半是 $SALT 在两次请求间被改过');
+      })
+
+      /* 7. 同一访客重复点赞 —— 防重复的核心 */
+      .then(function () {
+        return post({ article_id: art1, visitor_id: visitorA });
+      })
+      .then(function (res) {
+        var ok = !!res.json && res.json.code === 1001
+                 && res.json.data && res.json.data.like_count === 1;
+        record('⑦ 重复点赞拦截', ok, shortJson(res),
+          ok ? '第二次点赞被拦下，计数没有变成 2'
+             : '期望 code:1001 且 like_count 仍为 1。若计数变成 2，说明 like_records 的唯一索引没建上，请重新导入 schema.sql');
+      })
+
+      /* 8. 换一个访客 —— 应当继续增加 */
+      .then(function () {
+        return post({ article_id: art1, visitor_id: visitorB });
+      })
+      .then(function (res) {
+        var ok = !!res.json && res.json.code === 0
+                 && res.json.data && res.json.data.like_count === 2;
+        record('⑧ 不同访客计数累加', ok, shortJson(res),
+          ok ? '换人点赞后计数变成 2' : '期望 code:0 且 like_count:2');
+      })
+
+      /* 9. 取消点赞 —— 用一篇全新的文章，不干扰前面几项 */
+      .then(function () {
+        return post({ article_id: art4, visitor_id: visitorA });
+      })
+      .then(function () {
+        return post({ article_id: art4, visitor_id: visitorA, action: 'unlike' });
+      })
+      .then(function (res) {
+        var ok = !!res.json && res.json.code === 0
+                 && res.json.data && res.json.data.like_count === 0
+                 && res.json.data.liked === false
+                 && res.json.data.removed === true;
+        record('⑨ 取消点赞', ok, shortJson(res),
+          ok ? '计数从 1 减回 0，removed 为 true'
+             : '期望 code:0、like_count:0、liked:false、removed:true');
+      })
+
+      /* 10. 取消之后还能重新点赞 */
+      .then(function () {
+        return post({ article_id: art4, visitor_id: visitorA, action: 'like' });
+      })
+      .then(function (res) {
+        var ok = !!res.json && res.json.code === 0
+                 && res.json.data && res.json.data.like_count === 1
+                 && res.json.data.liked === true;
+        record('⑩ 取消后可以重新点赞', ok, shortJson(res),
+          ok ? '计数回到 1，说明取消是真的删除了记录，不是打标记'
+             : '期望 code:0 且 like_count:1。若返回 1001，说明取消没有真的删掉明细');
+      })
+
+      /* 11. 没赞过就取消 —— 应当幂等成功，不报错 */
+      .then(function () {
+        return post({ article_id: art4, visitor_id: visitorC, action: 'unlike' });
+      })
+      .then(function (res) {
+        var ok = !!res.json && res.json.code === 0
+                 && res.json.data && res.json.data.removed === false;
+        record('⑪ 没赞过时取消（幂等）', ok, shortJson(res),
+          ok ? '本来就没赞过，返回成功但 removed 为 false —— 幂等，不当作错误'
+             : '期望 code:0 且 removed:false');
+      })
+
+      /* 12. 另一篇文章互不影响 */
+      .then(function () {
+        return post({ article_id: art2, visitor_id: visitorA });
+      })
+      .then(function (res) {
+        var ok = !!res.json && res.json.code === 0
+                 && res.json.data && res.json.data.like_count === 1;
+        record('⑫ 文章之间相互隔离', ok, shortJson(res),
+          ok ? '新文章从 1 开始，不受第一篇影响' : '期望 code:0 且 like_count:1');
+      })
+
+      .then(function () {
+        return get('?article_id=' + encodeURIComponent(art1));
+      })
+      .then(function (res) {
+        var ok = !!res.json && res.json.data && res.json.data.like_count === 2;
+        record('⑬ 原文章计数未被污染', ok, shortJson(res),
+          ok ? '第一篇仍然是 2，两个文章各算各的' : '期望第一篇仍为 2');
+      })
+
+      /* 11. 批量接口 */
+      .then(function () {
+        return get('?article_ids=' + encodeURIComponent(art1 + ',' + art2 + ',' + art3)
+                 + '&visitor_id=' + encodeURIComponent(visitorA));
+      })
+      .then(function (res) {
+        var items = res.json && res.json.data && res.json.data.items;
+        var ok = !!items && items.length === 3
+                 && items[0].like_count === 2
+                 && items[1].like_count === 1
+                 && items[2].like_count === 0
+                 && items[0].liked === true
+                 && items[2].liked === false;
+        record('⑭ 批量查询', ok, shortJson(res),
+          ok ? '三篇一次返回，顺序一致，不存在的文章补 0，liked 状态正确'
+             : '期望 items 三项依次为 2 / 1 / 0，且 liked 为 true / true / false');
+      })
+
+      /* 12. 响应头 */
+      .then(function () {
+        return get('?article_id=' + encodeURIComponent(art1));
+      })
+      .then(function (res) {
+        var ctOk = res.contentType.indexOf('application/json') === 0;
+        var cacheOk = res.cacheControl.toLowerCase().indexOf('no-store') !== -1;
+        var ok = ctOk && cacheOk;
+        record('⑮ 响应头', ok, 'Content-Type: ' + res.contentType + ' | Cache-Control: ' + res.cacheControl,
+          ok ? 'JSON 类型与禁用缓存都正确'
+             : '期望 Content-Type 为 application/json 且 Cache-Control 含 no-store');
+      })
+
+      /* 13. CORS —— 只能是"跳过"，原因见下方说明 */
+      .then(function () {
+        // Origin 属于浏览器的禁止修改请求头，JS 里设了也会被浏览器丢掉。
+        // 同源请求本来就不带 Origin，响应自然也不会有 ACAO 头 —— 所以这一项
+        // 没法在本页自动测。硬测只会得到一个假的"不通过"，反而误导排查。
+        record('⑯ CORS 白名单', 'skip',
+          '需手动验证，命令见下方提示',
+          '本页与接口同源，浏览器不会发送 Origin 头，因此无法自动检测。'
+          + '同源场景本来也不需要 CORS，不影响使用；等以后把 API 挪到子域才需要。');
+      })
+
+      .catch(function (err) {
+        record('意外中断', false, String(err && err.message ? err.message : err),
+          '请求本身就没发出去或被浏览器拦截。检查 API 地址是否填对、文件是否上传成功。');
+      })
+
+      .then(function () {
+        runBtn.disabled = false;
+        apiInput.disabled = false;
+      });
+  }
+
+  /* ---------- 复制结果 ---------- */
+
+  function copyReport() {
+    var lines = report.map(function (r) {
+      var tag = r.status === 'skip' ? '跳过' : (r.status ? '通过' : '不通过');
+      return '[' + tag + '] ' + r.name + ' — ' + r.actual;
+    });
+    var failed = report.filter(function (r) { return r.status === false; }).length;
+    var skipped = report.filter(function (r) { return r.status === 'skip'; }).length;
+    lines.unshift('点赞系统自检结果（' + (report.length - failed - skipped) + '/' + report.length
+      + ' 通过，' + skipped + ' 项跳过）');
+    lines.push('API: ' + base());
+
+    var text = lines.join('\n');
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () {
+        copyBtn.textContent = '已复制';
+        window.setTimeout(function () { copyBtn.textContent = '复制结果'; }, 2000);
+      });
+      return;
+    }
+
+    // 老浏览器兜底
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); } catch (e) { /* 忽略 */ }
+    document.body.removeChild(ta);
+  }
+
+  // 默认填上根据本页位置推断出来的地址，省得用户自己猜
+  apiInput.value = guessApiUrl();
+  apiHint.textContent = '这是按本页所在位置推断的：本页目录 + /api/likes.php。'
+    + '如果你的 api/ 放在别处，直接改上面的输入框即可。';
+
+  runBtn.addEventListener('click', run);
+  copyBtn.addEventListener('click', copyReport);
+})();
+</script>
+
+</body>
+</html>

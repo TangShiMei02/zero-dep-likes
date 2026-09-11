@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="点赞" data-page-node-id="L1Cql0T7ZlwTW5Yee2LULE">
+  <title>点赞</title>
+
+  <!--
+    博客点赞系统 · 站点图标
+    版本 v1.2.0
+
+    设计说明：
+      - 32×32 网格，圆角 7 —— 浏览器标签页通常只渲染到 16px，
+        方形圆角在这么小的尺寸下最稳，不会被裁掉边角特征
+      - 底色用项目强调色珊瑚橙 #F77234，和组件"已赞"状态同色，
+        所以图标本身就在说"这是点赞"
+      - 拇指用纯白色块面，不做描边：16px 时线条会糊成一团，
+        实心块面才认得出来
+      - 手背竖条与手掌分离，留一道缝 —— 这道缝是拇指图标能被认出来的关键，
+        去掉就变成一个不明方块了
+
+    用法（放在 <head> 里）：
+      <link rel="icon" type="image/svg+xml" href="/assets/likes/icon.svg">
+      <link rel="apple-touch-icon" href="/assets/likes/icon.svg">
+
+    想换配色就改下面两个 fill 值。
+  -->
+
+  <!-- 底色 -->
+  <rect width="32" height="32" rx="7" fill="#F77234" data-page-node-id="YpWidKDlH70nHRWOByFsG4"/>
+
+  <!-- 手背（竖条） -->
+  <rect x="6.5" y="14" width="4.2" height="10.4" rx="1.3" fill="#FFFFFF" data-page-node-id="kGmA2peUWC5Fzbj5gDfXPq"/>
+
+  <!-- 手掌 + 竖起的大拇指 -->
+  <path d="M12.4 14.6
+           C13.6 12.3 14.9 10.0 15.9 8.6
+           C16.5 7.7 17.8 7.6 18.6 8.3
+           C19.3 9.0 19.5 10.0 19.1 10.9
+           L17.8 14.6
+           H23.1
+           C24.4 14.6 25.4 15.8 25.1 17.1
+           L24.1 22.2
+           C23.9 23.4 22.9 24.4 21.6 24.4
+           H12.4
+           Z"
+        fill="#FFFFFF" data-page-node-id="dHMHOFP8eZrG4wPBIwD1WF"/>
+
+</svg>

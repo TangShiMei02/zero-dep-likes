@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 152" width="680" height="152" role="img" aria-label="点赞组件的三种状态：未赞、已赞、加载中">
+  <title>点赞组件的三种状态</title>
+
+  <!-- 浅色卡片底：在 GitHub 亮色与暗色主题下都保持可读 -->
+  <rect x="0" y="0" width="680" height="152" rx="10" fill="#f6f8fa"/>
+
+  <g font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', Arial, sans-serif">
+
+    <!-- ============ 状态一：未赞 ============ -->
+    <rect x="40" y="44" width="150" height="42" rx="6" fill="none" stroke="#d0d7de" stroke-width="1"/>
+    <!-- 拇指图标：描边态（16px，由 24 单位等比缩放而来） -->
+    <g transform="translate(54,57) scale(0.67)">
+      <path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.58 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-1z"
+            fill="none" stroke="#24292f" stroke-width="1.7" stroke-linejoin="round"/>
+    </g>
+    <text x="78" y="71" font-size="14" fill="#24292f">点赞</text>
+    <text x="116" y="71" font-size="14" fill="#57606a">42</text>
+    <text x="115" y="118" font-size="12.5" fill="#8b949e" text-anchor="middle">未赞 · 描边拇指</text>
+
+    <!-- ============ 状态二：已赞 ============ -->
+    <rect x="265" y="44" width="150" height="42" rx="6" fill="none" stroke="#f77234" stroke-opacity="0.42" stroke-width="1"/>
+    <!-- 拇指图标：实心态，同一路径，只换填充 -->
+    <g transform="translate(279,57) scale(0.67)">
+      <path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.58 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-1z"
+            fill="#f77234" stroke="#f77234" stroke-width="1.7" stroke-linejoin="round"/>
+    </g>
+    <text x="303" y="71" font-size="14" fill="#f77234">已赞</text>
+    <text x="341" y="71" font-size="14" fill="#f77234">43</text>
+    <text x="340" y="118" font-size="12.5" fill="#8b949e" text-anchor="middle">已赞 · 实心拇指，唯一强调色</text>
+
+    <!-- ============ 状态三：加载中 ============ -->
+    <rect x="490" y="44" width="150" height="42" rx="6" fill="none" stroke="#d0d7de" stroke-width="1"/>
+    <g transform="translate(504,57) scale(0.67)">
+      <path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.58 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-1z"
+            fill="none" stroke="#8b949e" stroke-width="1.7" stroke-linejoin="round"/>
+    </g>
+    <text x="528" y="71" font-size="14" fill="#8b949e">点赞</text>
+    <text x="566" y="71" font-size="14" fill="#8b949e">--</text>
+    <text x="565" y="118" font-size="12.5" fill="#8b949e" text-anchor="middle">加载中 · 先占位，不推动布局</text>
+
+  </g>
+</svg>

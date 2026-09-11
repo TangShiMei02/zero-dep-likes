@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>点赞组件演示 — 离线预览</title>
+<link rel="icon" type="image/svg+xml" href="../assets/likes/icon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="../assets/likes/icon-32.png">
+<link rel="apple-touch-icon" href="../assets/likes/icon-180.png">
+
+<!--
+  这是一个纯静态演示页，不需要 PHP、不需要数据库。
+
+  它内置了一个「假后端」拦截 /api/likes.php 请求，行为与真实接口一致：
+  首次点赞 +1、再点一次取消 -1、重复点赞返回 1001、不同文章互不影响。
+  数据只存在浏览器内存里，刷新页面即重置。
+
+  用途：确认前端组件的长相和交互符合预期之后，再去部署真后端。
+  注意：这个文件不需要上传到你的网站，留着本地看就行。
+-->
+
+<style>
+  /* ---------------- 演示页自身的样式（模拟一篇博客文章） ---------------- */
+  :root {
+    --page-bg: #f6f6f7;
+    --surface: #ffffff;
+    --text: #23262b;
+    --text-dim: #6a7078;
+    --line: #e3e4e7;
+  }
+
+  html[data-theme="dark"] {
+    --page-bg: #16181c;
+    --surface: #1d2025;
+    --text: #e6e7ea;
+    --text-dim: #9aa0a8;
+    --line: #2c3037;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    padding: 2.5rem 1.25rem 4rem;
+    background: var(--page-bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+                 "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    font-size: 16px;
+    line-height: 1.75;
+  }
+
+  .wrap { max-width: 44rem; margin: 0 auto; }
+
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 2rem;
+  }
+
+  .topbar h1 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0;
+    letter-spacing: 0.01em;
+  }
+
+  .topbar p {
+    margin: 0.15rem 0 0;
+    font-size: 0.8125rem;
+    color: var(--text-dim);
+  }
+
+  .theme-toggle {
+    flex: none;
+    padding: 0.4rem 0.8rem;
+    font: inherit;
+    font-size: 0.8125rem;
+    color: var(--text);
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    cursor: pointer;
+  }
+
+  .theme-toggle:hover { border-color: var(--text-dim); }
+
+  article {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 1.75rem 1.75rem 1.25rem;
+    margin-bottom: 2rem;
+  }
+
+  article h2 {
+    font-size: 1.25rem;
+    margin: 0 0 0.35rem;
+    line-height: 1.4;
+  }
+
+  article .meta {
+    font-size: 0.8125rem;
+    color: var(--text-dim);
+    margin-bottom: 1.1rem;
+  }
+
+  article p {
+    margin: 0 0 1rem;
+    color: var(--text);
+  }
+
+  .notice {
+    font-size: 0.8125rem;
+    color: var(--text-dim);
+    border-top: 1px solid var(--line);
+    padding-top: 1rem;
+    margin-top: 1rem;
+  }
+
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.85em;
+    padding: 0.1em 0.35em;
+    border-radius: 4px;
+    background: color-mix(in srgb, currentColor 10%, transparent);
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <div class="topbar">
+    <div>
+      <h1>点赞组件 · 离线预览</h1>
+      <p>演示用假后端，数据存在内存里，刷新即重置</p>
+    </div>
+    <button class="theme-toggle" type="button" id="theme-toggle">切换深浅色</button>
+  </div>
+
+  <article>
+    <h2>第一篇：为什么用 slug 当文章 ID</h2>
+    <p class="meta">2026-09-11 · 3 分钟</p>
+    <p>文章的标识要稳定且唯一。建议直接用 URL 里的 slug，例如 <code>why-use-slug</code>，这样换数据库、换后端都不影响已有的点赞记录。</p>
+
+    <div class="like-widget" data-article-id="why-use-slug">
+      <button class="like-button" type="button" aria-pressed="false" aria-label="点赞这篇文章">
+        <svg class="like-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.58 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-1z"/>
+        </svg>
+        <span class="like-label">点赞</span>
+        <span class="like-count">--</span>
+      </button>
+    </div>
+  </article>
+
+  <article>
+    <h2>第二篇：防重复点赞的三道防线</h2>
+    <p class="meta">2026-09-11 · 5 分钟</p>
+    <p>前端禁用按钮只是第一道；第二道是服务端唯一索引；第三道是事务里的原子自增。三样凑齐，并发也不会把计数搞乱。</p>
+
+    <div class="like-widget" data-article-id="anti-duplicate-like">
+      <button class="like-button" type="button" aria-pressed="false" aria-label="点赞这篇文章">
+        <svg class="like-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.58 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-1z"/>
+        </svg>
+        <span class="like-label">点赞</span>
+        <span class="like-count">--</span>
+      </button>
+    </div>
+  </article>
+
+  <article>
+    <h2>第三篇：这篇的计数器从 0 开始</h2>
+    <p class="meta">2026-09-11 · 2 分钟</p>
+    <p>后端里没有记录的文章，接口返回 <code>like_count: 0</code> 而不是报错。所以新文章发出去，点赞数是 0 而不是空白或报错。</p>
+
+    <div class="like-widget" data-article-id="new-post-without-records">
+      <button class="like-button" type="button" aria-pressed="false" aria-label="点赞这篇文章">
+        <svg class="like-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.58 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-1z"/>
+        </svg>
+        <span class="like-label">点赞</span>
+        <span class="like-count">--</span>
+      </button>
+    </div>
+
+    <p class="notice">
+      可以看到三篇是<b>一次批量请求</b>拿到的点赞数。点第一篇后再刷新页面，因为演示数据不落盘，它会回到初始值——真实环境里由数据库持久化。
+    </p>
+  </article>
+
+</div>
+
+<!-- ============================================================
+     演示用假后端：拦截 /api/likes.php
+     真实部署时删掉这一整段，接口由 PHP 提供。
+     必须放在 likes.js 之前。
+     ============================================================ -->
+<script>
+(function () {
+  'use strict';
+
+  var counts = {
+    'why-use-slug': 12,
+    'anti-duplicate-like': 5,
+    'new-post-without-records': 0
+  };
+  var liked = {};              // article_id -> true
+  var LATENCY = 300;           // 模拟网络延迟，方便观察加载态
+
+  var realFetch = window.fetch.bind(window);
+
+  function respond(payload) {
+    return new Response(JSON.stringify(payload), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json; charset=utf-8' }
+    });
+  }
+
+  window.fetch = function (url, options) {
+    var target = String(url);
+
+    if (target.indexOf('/api/likes.php') === -1) {
+      return realFetch(url, options);
+    }
+
+    var opts = options || {};
+    var method = (opts.method || 'GET').toUpperCase();
+
+    return new Promise(function (resolve) {
+      window.setTimeout(function () {
+        if (method === 'POST' || method === 'DELETE') {
+          var body = {};
+          try { body = JSON.parse(opts.body || '{}'); } catch (e) { body = {}; }
+          var id = body.article_id;
+
+          if (!(id in counts)) { counts[id] = 0; }
+
+          var action = (method === 'DELETE') ? 'unlike' : (body.action || 'like');
+
+          // 取消点赞
+          if (action === 'unlike') {
+            var removed = !!liked[id];
+            if (removed) {
+              liked[id] = false;
+              counts[id] = Math.max(counts[id] - 1, 0);
+            }
+            resolve(respond({
+              code: 0,
+              msg: 'ok',
+              data: { article_id: id, like_count: counts[id], liked: false, removed: removed }
+            }));
+            return;
+          }
+
+          // 点赞
+          if (liked[id]) {
+            resolve(respond({
+              code: 1001,
+              msg: 'already liked',
+              data: { article_id: id, like_count: counts[id], liked: true }
+            }));
+            return;
+          }
+
+          liked[id] = true;
+          counts[id] += 1;
+
+          resolve(respond({
+            code: 0,
+            msg: 'ok',
+            data: { article_id: id, like_count: counts[id], liked: true }
+          }));
+          return;
+        }
+
+        // GET
+        var parsed = new URL(target, window.location.href);
+        var visitor = parsed.searchParams.get('visitor_id') || '';
+        var single = parsed.searchParams.get('article_id');
+        var batch = parsed.searchParams.get('article_ids');
+
+        if (batch) {
+          var items = batch.split(',').map(function (rawId) {
+            var key = rawId.trim();
+            if (!(key in counts)) { counts[key] = 0; }
+            return {
+              article_id: key,
+              like_count: counts[key],
+              liked: !!liked[key]
+            };
+          });
+          resolve(respond({ code: 0, msg: 'ok', data: { items: items } }));
+          return;
+        }
+
+        if (!single) {
+          resolve(respond({ code: 400, msg: 'article_id is required', data: {} }));
+          return;
+        }
+
+        if (!(single in counts)) { counts[single] = 0; }
+
+        resolve(respond({
+          code: 0,
+          msg: 'ok',
+          data: {
+            article_id: single,
+            like_count: counts[single],
+            liked: !!liked[single]
+          }
+        }));
+      }, LATENCY);
+    });
+  };
+})();
+</script>
+
+<!-- 演示页自身的深浅色切换，与点赞组件无关 -->
+<script>
+(function () {
+  var root = document.documentElement;
+  var button = document.getElementById('theme-toggle');
+
+  button.addEventListener('click', function () {
+    var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+  });
+})();
+</script>
+
+<!-- 真正要交付的组件 -->
+<link rel="stylesheet" href="../assets/likes/likes.css">
+<script src="../assets/likes/likes.js?v=1.8.0"></script>
+
+</body>
+</html>

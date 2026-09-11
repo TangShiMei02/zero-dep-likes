@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-page-node-id="WsGmBmBf2wmrKG3jjK8BxB">
+<head data-page-node-id="iCBJcz1uCF6beMKkfAbmYj">
+<meta charset="utf-8" data-page-node-id="T2NDEVGOiVN6rlIWWPiieM">
+<meta name="viewport" content="width=device-width, initial-scale=1" data-page-node-id="amXuLCU1Tztar6SGdgQA7p">
+<title>点赞系统 · 图标自检</title>
+
+<!--
+  图标自检页
+
+  放在 assets/likes/ 里，和图标文件同一个目录 ——
+  这样下面的相对路径不存在任何歧义，是最干净的验证环境。
+
+  它能一次区分三种情况：
+    1. 文件压根没上传        → 图片加载失败
+    2. 服务器 MIME 类型不对  → 图片也加载失败（svg 被当文本发出去）
+    3. 文件正常，只是浏览器  → 图能显示，但标签页还是没图标
+       缓存了之前的 404         （Ctrl+F5 强刷）
+
+  验完可以删掉，也可以留着 —— 它不含任何敏感信息。
+-->
+
+<link rel="icon" type="image/svg+xml" href="icon.svg" data-page-node-id="qgx3EqrQgYjQq66ZhQmYUH">
+<link rel="icon" type="image/png" sizes="32x32" href="icon-32.png" data-page-node-id="wEdFMLIQP2WvjojmWrETEF">
+<link rel="apple-touch-icon" href="icon-180.png" data-page-node-id="ytcYl7I4iy4xFjNY333NbC">
+
+<style>
+  :root {
+    --bg: #f6f6f7; --surface: #fff; --text: #23262b; --dim: #6a7078;
+    --line: #e3e4e7; --accent: #F77234;
+    --ok: #1a7f4b; --ok-bg: #eaf6ef; --bad: #c0392b; --bad-bg: #fdeeec;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 2.5rem 1.25rem 4rem; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+                 "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    font-size: 15px; line-height: 1.7;
+  }
+  .wrap { max-width: 48rem; margin: 0 auto; }
+  h1 { font-size: 1.25rem; margin: 0 0 .3rem; }
+  h2 { font-size: .95rem; margin: 0 0 .7rem; }
+  .sub { color: var(--dim); font-size: .85rem; margin: 0 0 1.25rem; }
+  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 8px;
+           padding: 1.15rem 1.25rem; margin-bottom: 1rem; }
+  .callout { border-radius: 6px; padding: .8rem 1rem; font-size: .88rem; margin: 0 0 1rem;
+             border: 1px solid var(--line); }
+  .callout.ok { background: var(--ok-bg); border-color: #b7e0c8; color: var(--ok); }
+  .callout.bad { background: var(--bad-bg); border-color: #f2c3bd; color: var(--bad); }
+  .shots { display: flex; align-items: flex-end; gap: 1.5rem; flex-wrap: wrap; }
+  .shot { text-align: center; }
+  .shot img { display: block; background: var(--bg); border-radius: 6px; }
+  .shot span { display: block; font-size: .75rem; color: var(--dim); margin-top: .35rem; }
+  table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+  th { text-align: left; font-weight: 600; font-size: .78rem; color: var(--dim);
+       padding: .45rem .5rem; border-bottom: 1px solid var(--line); }
+  td { padding: .5rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+          font-size: .78rem; word-break: break-all; }
+  .badge { display: inline-block; min-width: 3.2rem; text-align: center;
+           padding: .1rem .4rem; border-radius: 4px; font-size: .75rem; white-space: nowrap; }
+  .badge.ok { background: var(--ok-bg); color: var(--ok); }
+  .badge.bad { background: var(--bad-bg); color: var(--bad); }
+  code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .86em;
+         padding: .1em .35em; border-radius: 4px; background: #f0f0f1; }
+  ol { margin: .4rem 0 0; padding-left: 1.2rem; font-size: .88rem; }
+  li { margin-bottom: .35rem; }
+</style>
+</head>
+<body data-page-node-id="mQj20kspFIVmE4N864TlKa">
+<div class="wrap" data-page-node-id="04BRw8E9BBoEpBeCP18EOS">
+
+  <h1 data-page-node-id="DHGuFtuBwmrM3UwzmPr72o">图标自检</h1>
+  <p class="sub" data-page-node-id="WOBD9oqCRzU0F8FmAY896l">本页和图标文件在同一个目录，路径没有任何歧义，是最干净的验证环境。</p>
+
+  <div id="verdict" data-page-node-id="s7SiE91G9gSYItA6ckFtQE"></div>
+
+  <div class="panel" data-page-node-id="xjuqH4lxkpQv2eOX8tiF28">
+    <h2 data-page-node-id="GyLzC14TT9vMoAnmAaCkSp">图标文件能不能被当成图片读出来</h2>
+    <div class="shots" data-page-node-id="dF6Mk5HZUqgAAvBw2hMmJp">
+      <div class="shot" data-page-node-id="e8jUOoTcdkPx8TBAMdRiRF">
+        <img id="t-svg" src="icon.svg" width="80" height="80" alt="SVG 图标" data-page-node-id="zuHlW4e8ScVhiv1wCDIlhL">
+        <span data-page-node-id="SDJYPp3qbwRgMMaX4D10ux">SVG · 80px</span>
+      </div>
+      <div class="shot" data-page-node-id="qgjWGHTa7DCS0z3yWxwDGw">
+        <img id="t-512" src="icon-512.png" width="64" height="64" alt="PNG 图标" data-page-node-id="WRfoVVcsaYUy902SlZKdg0">
+        <span data-page-node-id="Jp5gJ47DHtGCl86DM6yZ5d">PNG · 64px</span>
+      </div>
+      <div class="shot" data-page-node-id="r6OKruj5lBusFSebWGKdvE">
+        <img id="t-180" src="icon-180.png" width="40" height="40" alt="PNG 图标" data-page-node-id="RmzaUkl7vKyC4Anwp57E3J">
+        <span data-page-node-id="HF1RDxhkq9AeKRx4GV2SYK">PNG · 40px</span>
+      </div>
+      <div class="shot" data-page-node-id="WTksXzNEf02GDIi7z2hwWS">
+        <img id="t-32" src="icon-32.png" width="16" height="16" alt="PNG 图标" data-page-node-id="a0APdOsiBqJI477p0DzExs">
+        <span data-page-node-id="MY76pzcoDdKEP7h69MtqOo">PNG · 16px</span>
+      </div>
+    </div>
+    <p style="font-size:.85rem;color:var(--dim);margin:.9rem 0 0" data-page-node-id="3W9kqONuQRTtaVm7qYEEkK">
+      眼睛看上面这四张图：都显示出橙色拇指 = 文件没问题。
+      <b data-page-node-id="JJRIgfBSO4NMJFACMiTBDJ">如果有裂图、空白或者显示成一段代码</b>，看下面表格里对应那一行的结论。
+    </p>
+  </div>
+
+  <div class="panel" data-page-node-id="105V7s08mFGNRxlskjbSKJ">
+    <h2 data-page-node-id="DM6LlLWXDCnLHEy5oK32Nm">逐个文件的检测结果</h2>
+    <table data-page-node-id="ULfoPDfu6vu6x9p2wyO8M8">
+      <thead data-page-node-id="yUBvEhBfQz5FZbuXRZtouj">
+        <tr data-page-node-id="j9ijToyNDOsbkIFjoTdgTc"><th style="width:11rem" data-page-node-id="M1SGF7OrDVIrxMZFnLGRFR">文件</th><th style="width:5rem" data-page-node-id="4FvD1BND5KSpvRVYESv1rZ">结果</th><th data-page-node-id="y3ppMlCg25lLIqnbZI2nnh">说明</th></tr>
+      </thead>
+      <tbody id="rows" data-page-node-id="bXRSUZFfJB7raP2gkiwEl3"></tbody>
+    </table>
+  </div>
+
+  <div class="panel" data-page-node-id="5lD1McA6Tq3PKA34VDkDNN">
+    <h2 data-page-node-id="nbOcF02B1MTWUJ0Q8kL8PH">标签页图标要看这里</h2>
+    <ol data-page-node-id="saSa60dPZPi40Ec0WWpTQF">
+      <li data-page-node-id="ru6ZMUUdKTEHx9sPZxEtXe"><b data-page-node-id="qSGodhWarMSZ0AX6zibtbM">看浏览器这个标签的最左边</b>，有没有出现橙色拇指。</li>
+      <li data-page-node-id="6PG7u4m9Me8cx9dPL2ReQA">如果上面四张图都正常、但标签页还是没有图标 ——
+          多半是浏览器把之前那次 404 <b data-page-node-id="2GE0NTHizgRZwkw5ghsy5i">缓存住了</b>。<b data-page-node-id="tj5vioIva9yjRtKVuS5Ojl">按 Ctrl + F5 强制刷新</b>，
+          或者干脆开一个新的无痕窗口访问本页再看。</li>
+      <li data-page-node-id="GiUByC0jNoiZ5udpityKKr">确认无误后，把下面这几行复制到你<b data-page-node-id="fppdiAhUamfzXcVX67XRjK">其他页面</b>的 <code data-page-node-id="NRsNOHHFyvDNdAhwuvjFVw">&lt;head&gt;</code> 里就行
+          （路径按实际部署调整）：</li>
+    </ol>
+    <p class="mono" style="margin:.6rem 0 0; background:#f0f0f1; padding:.6rem .8rem; border-radius:6px" data-page-node-id="QcE61P5pEOAIzs7PHmrguO">
+      &lt;link rel="icon" type="image/svg+xml" href="/zero-dep-likes/assets/likes/icon.svg"&gt;<br data-page-node-id="PN0Hg3fsrZmjEGH0cZgNLq">
+      &lt;link rel="icon" type="image/png" sizes="32x32" href="/zero-dep-likes/assets/likes/icon-32.png"&gt;<br data-page-node-id="bkKUClDVsMWdSCjgfkomyV">
+      &lt;link rel="apple-touch-icon" href="/zero-dep-likes/assets/likes/icon-180.png"&gt;
+    </p>
+  </div>
+
+  <div class="panel" data-page-node-id="4HD2T1kZGcnzMLMCfUunWb">
+    <h2 data-page-node-id="OTFCAMv6Suy53VCUQXNUbb">关于接口地址</h2>
+    <p style="font-size:.88rem;margin:0" data-page-node-id="Gp17bC7wsbx26eG6pLQ3dA">
+      <code data-page-node-id="Gco5qjh3lpE843vCL3LsZE">/api/likes.php</code> 返回的是 <b data-page-node-id="Fzd2SCzvuaaTckIMgQbjXt">JSON 数据，不是一个网页</b>。
+      浏览器把 JSON 当纯文本显示时，标签页<b data-page-node-id="gBUFtyGHEBTViVPXuOoqbF">不会</b>给任何图标。
+      所以不要用接口地址来验证图标 —— 那个页面永远不会有图标，这不是坏了。
+    </p>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var checks = [
+    { id: 't-svg', file: 'icon.svg',    label: '矢量图标，主用' },
+    { id: 't-512', file: 'icon-512.png', label: 'PNG，给不支持 svg 的场景' },
+    { id: 't-180', file: 'icon-180.png', label: 'PNG，苹果设备加到桌面用' },
+    { id: 't-32',  file: 'icon-32.png',  label: 'PNG，16/32px 小尺寸兜底' }
+  ];
+
+  var rowsEl = document.getElementById('rows');
+  var verdictEl = document.getElementById('verdict');
+  var results = [];
+  var doneCount = 0;
+
+  function row(file, ok, text) {
+    var tr = document.createElement('tr');
+
+    var td1 = document.createElement('td');
+    td1.className = 'mono';
+    td1.textContent = file;
+
+    var td2 = document.createElement('td');
+    var b = document.createElement('span');
+    b.className = 'badge ' + (ok ? 'ok' : 'bad');
+    b.textContent = ok ? '正常' : '有问题';
+    td2.appendChild(b);
+
+    var td3 = document.createElement('td');
+    td3.textContent = text;
+
+    tr.appendChild(td1);
+    tr.appendChild(td2);
+    tr.appendChild(td3);
+    rowsEl.appendChild(tr);
+  }
+
+  function render() {
+    // 等全部结果到齐再画表格，避免异步加载顺序把行序打乱
+    rowsEl.innerHTML = '';
+    results.forEach(function (r) {
+      row(
+        r.check.file,
+        r.ok,
+        r.ok
+          ? r.check.label
+          : '加载失败：文件不在这层，或服务器没把它当图片类型发出。直接打开同目录的 '
+            + r.check.file + ' 看看会显示什么'
+      );
+    });
+
+    var failed = results.filter(function (r) { return !r.ok; });
+
+    verdictEl.innerHTML = '';
+    var box = document.createElement('div');
+    box.className = 'callout ' + (failed.length === 0 ? 'ok' : 'bad');
+
+    if (failed.length === 0) {
+      box.textContent = '四个图标文件全部正常加载。文件在服务器上、路径也对，'
+        + '服务器也把它们正确识别成了图片。剩下的只看浏览器缓存 —— '
+        + '如果标签页还没图标，按 Ctrl + F5 强刷一次。';
+
+    } else {
+      var names = failed.map(function (r) { return r.check.file; }).join('、');
+
+      var title = document.createElement('b');
+      title.textContent = '这些文件加载失败了：' + names;
+      box.appendChild(title);
+
+      var tip = document.createElement('div');
+      tip.style.marginTop = '.35rem';
+      tip.textContent = failed.length === results.length
+        ? '全部失败，说明整个 assets/likes/ 目录下没有这些文件 —— 检查一下是不是上传时多套了一层目录。'
+        : '说明这些文件没上传到这一层，或服务器没把 svg 当图片类型发出去。'
+          + '实在不行就只用 PNG 那几行链接，别用 svg 的。';
+      box.appendChild(tip);
+    }
+
+    verdictEl.appendChild(box);
+  }
+
+  function record(check, ok) {
+    results.push({ check: check, ok: ok });
+    doneCount++;
+    if (doneCount === checks.length) {
+      render();
+    }
+  }
+
+  checks.forEach(function (c) {
+    var img = document.getElementById(c.id);
+
+    // 图片可能已经加载完了（脚本在最后执行），这时 complete 已经是 true。
+    // 加载失败时 complete 同样是 true，但 naturalWidth 为 0，正好用来区分。
+    if (img.complete) {
+      record(c, img.naturalWidth > 0);
+      return;
+    }
+
+    img.addEventListener('load', function () { record(c, true); });
+    img.addEventListener('error', function () { record(c, false); });
+  });
+})();
+</script>
+
+</body>
+</html>
