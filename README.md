@@ -6,7 +6,7 @@
 不接第三方服务，不用注册账号。
 
 <p align="center">
-  <img src="docs/preview.svg" alt="点赞组件的三种状态：未赞（描边拇指）、已赞（实心拇指，珊瑚橙）、加载中" width="680">
+  <img src="docs/preview.png" alt="点赞组件的三种状态：未赞（描边拇指）、已赞（实心拇指，珊瑚橙）、加载中" width="680">
 </p>
 
 [![PHP](https://img.shields.io/badge/PHP-7.4%2B-777bb4?logo=php&logoColor=white)](#环境要求)
