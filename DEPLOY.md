@@ -333,7 +333,7 @@ curl -s "$API?article_id=itest-concurrent"; echo
 
 ## 卡住了怎么办
 
-把这两样发我，我一眼能看出问题：
+把这两样发agent试试，它们应该能看出问题：
 
 1. 自检页点「复制结果」后的文本
 2. 浏览器 F12 → Console 里以 `[likes]` 开头的黄色警告
